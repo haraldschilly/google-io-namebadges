@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- encoding:utf-8 -*-
+
 # Copyright 2011 Harald Schilly <harald@gtug.at>
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# DOCUMENTATION
+### DOCUMENTATION
 #
 # Input
 # this program takes a csv list (download/export from google docs) where column 0 is 
@@ -23,8 +24,11 @@
 # Output
 # Creates a directory qr, fills it with QR codes downloaded from the Google Visualizaion API.
 # Outputs a HTML file called HTMLFN with proper CSS for printing.
+# You need a webbrowser that prints the pages as close to the given values as possible.
+# Chrome 11&12 do a good job, Firefox adds header/footer without warning.
 
-# SETTINGS
+
+### SETTINGS
 
 # input filename (csv, column 0 = name, column 1 = email)
 CSVFN = u'Google I%2FO Extended RSVP.csv'
@@ -138,22 +142,22 @@ img { border: 0; }
 </head>
 <body>
 <table class='page'>
-''')
-
-HTML_intro = HTML_intro.substitute(locals())
+''').substitute(locals())
 
 HTML_outro = r'''
 </body>
 </html>
 '''
 
-### code starts here
+### actual Code starts here
 
 import csv, urllib2, os, sys
 from collections import namedtuple
 
+# QR code images end up in qr. delete the whole dir to refresh them.
 if not os.path.exists("qr"): os.mkdir("qr")
 
+# Datacontainer
 Guest = namedtuple('Guest', ['name', 'email'])
 
 import codecs
@@ -165,6 +169,7 @@ except IOError, msg:
   sys.exit(1)
 content.next() # skip header
 
+# html will contain the complete website in the end
 html = unicode() + HTML_intro
 
 # iterate over each named tuple Guest generated for each first 2 elements in csv list of lists
@@ -201,8 +206,8 @@ for cnt, g in enumerate(map(lambda x : Guest._make(x[:2]), content)):
   badge += "<td class='badge'>\n"
   badge += "<div class='content'>"
   badge += u"<div class='name'>%s %s<br/>%s</div>" % (PREFIX, g.name.decode("utf8"), g.email)
-  badge += "<img  class='qr' src='file://%s'></img>\n" % os.path.abspath(qrpath)
-  badge += "<img class='iologo' src='http://5086435995455968796-a-1802744773732722657-s-sites.googlegroups.com/site/2011ioextended/i-o-extended-logos/io2011logo_devcon_extended.png?attachauth=ANoY7crp5xqaW5kgAWIsLONj_c5iI3acqaW2N4GDRELM4QTId4o8O_TL38Cs3xm1ikGfnJ4MeaTUUBFlkItR1Hl-WCvM9xpiHmzvvn7377mO9gQSvzJXnxXb8gAbuuA1bc93n5rxW4lAD8o70ZmKsAgkYPEM-r8jiKBhUKl8BVKORS36uIppD1lIdbQiVLRZSQzeWEdKJh6Z1wHK5Vc2YJ6vXygV_IwfgeTGY4rmSa2Z7OuBoZ11tuVPvohvukNOjkTp5_sen7YX&attredirects=0'></img>\n"
+  badge += "<img  class='qr' src='%s'></img>\n" % qrpath
+  badge += "<img class='iologo' src='io-extended-logo.png'></img>\n"
   #badge += "<div class='background'>I/O</div>"
   badge += "<div class='teaser'>%s</div>" % TEASER
   badge += "</div>"
@@ -213,7 +218,7 @@ for cnt, g in enumerate(map(lambda x : Guest._make(x[:2]), content)):
 
   html += badge
     
-print "cnt: ", (cnt % (cols*rows))
+#print "cnt: ", (cnt % (cols*rows))
 # adding <tr>'s as remainder on last page
 for i in range(-1, (cnt % (cols*rows)) % cols):
   html += '<tr><td class="badge"><div class="content"></div></td><td><div class="content"></div></td></tr>'
@@ -221,3 +226,6 @@ html += '</table>' + HTML_outro
 
 with codecs.open(HTMLFN, 'w', 'utf-8-sig') as htmlfile:
   htmlfile.write(html)
+  print "output html written to", os.path.abspath(HTMLFN)
+
+
