@@ -34,6 +34,7 @@ CSVFN = u'Google I%2FO Extended RSVP.csv'
 BASEFN = "google-io-extended-badges"
 
 IOLOGO = "io-extended-logo.png" # TODO check for updates in 2012 and later
+COLORSTRIP = "google-io-colorstrip.png"
 
 # text at the bottom
 FOOTER = "Sector5, Vienna, May 10. &amp; 11., 2011"
@@ -236,18 +237,20 @@ for cnt, g in enumerate(map(lambda x : Guest._make(x[:2]), content)):
            pmargin[0] + offsetcnt[1] * (bdims[0] + bspace[0])
 
   # for testing the actual borders
-  svg += svg_rect(offset[0], offset[1], bdims[1], bdims[0], "#ccc")
-  svg += svg_text(offset[0] + 1, offset[1] + 10, g.name.lower().decode("utf8"), size=4.5, weight="bold")
-  svg += svg_text(offset[0] + 1, offset[1] + 16, g.email.lower(),               size=4, col="#333")
+  #svg += svg_rect(offset[0], offset[1], bdims[1], bdims[0], "#ccc")
+  svg += svg_text(offset[0] + 4, offset[1] + 10, g.name.lower().decode("utf8"), size=4.5, weight="bold")
+  svg += svg_text(offset[0] + 4, offset[1] + 16, g.email.lower(),               size=4, col="#333")
 
   # QR
   svg += svg_img(offset[0] + bdims[1] - 33, offset[1] + bdims[0] - 33, 31, 31, qrpath)
   # Logo
   svg += svg_img(offset[0] + bdims[1] - 33, offset[1] + 4, 31, 9, IOLOGO)
+  # colorstrip
+  svg += svg_img(offset[0], offset[1] + 3, 3, bdims[0] - 4, COLORSTRIP)
   # Teaser
-  svg += svg_text(offset[0] + 1, offset[1] + 20, TEASER, size=2, col="#ccc")
+  svg += svg_text(offset[0] + 4, offset[1] + 20, TEASER, size=2, col="#ccc")
   # Footer
-  svg += svg_text(offset[0] + 1, offset[1] + bdims[0] - 2, FOOTER, col="#333", variant="italic", size=2.5)
+  svg += svg_text(offset[0] + 4, offset[1] + bdims[0] - 2, FOOTER, col="#333", variant="italic", size=2.5)
 
 
 
