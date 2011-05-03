@@ -4,3 +4,5 @@ syntax: regexp
 ^.*.csv$
 ^.*.swp$
 ^.*~$
+^.*.svg$
+^.*.pdf$
