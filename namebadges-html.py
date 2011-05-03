@@ -180,8 +180,9 @@ for cnt, g in enumerate(map(lambda x : Guest._make(x[:2]), content)):
 
   #print g.name, urllib2.quote(g.email), url
 
-  # unique name for qr file
-  qrname = g.email.replace("@", ".").strip()
+  # unique name for qr file (add name, some have no email!)
+  qrname = g.name.strip().replace(" ", "_").decode("utf8")
+  qrname += g.email.replace("@", ".").strip()
 
   # where to write to
   qrpath = os.path.join("qr", qrname + ".png")
@@ -206,7 +207,7 @@ for cnt, g in enumerate(map(lambda x : Guest._make(x[:2]), content)):
   badge += "<td class='badge'>\n"
   badge += "<div class='content'>"
   badge += u"<div class='name'>%s %s<br/>%s</div>" % (PREFIX, g.name.decode("utf8"), g.email)
-  badge += "<img  class='qr' src='%s'></img>\n" % qrpath
+  badge += u"<img  class='qr' src='%s'></img>\n" % qrpath
   badge += "<img class='iologo' src='io-extended-logo.png'></img>\n"
   #badge += "<div class='background'>I/O</div>"
   badge += "<div class='teaser'>%s</div>" % TEASER
