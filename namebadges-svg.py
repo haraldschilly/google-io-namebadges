@@ -244,7 +244,7 @@ for cnt, g in enumerate(map(lambda x : Guest._make(x[:2]), content)):
   # QR
   svg += svg_img(offset[0] + bdims[1] - 33, offset[1] + bdims[0] - 33, 31, 31, qrpath)
   # Logo
-  svg += svg_img(offset[0] + bdims[1] - 33, offset[1] + 4, 31, 9, IOLOGO)
+  svg += svg_img(offset[0] + bdims[1] - 33, offset[1] + 5, 31, 9, IOLOGO)
   # colorstrip
   svg += svg_img(offset[0], offset[1] + 3, 3, bdims[0] - 4, COLORSTRIP)
   # Teaser
