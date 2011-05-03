@@ -33,6 +33,11 @@ CSVFN = u'Google I%2FO Extended RSVP.csv'
 # output filename common prefix
 BASEFN = "google-io-extended-badges"
 
+IOLOGO = "io-extended-logo.png" # TODO check for updates in 2012 and later
+
+# text at the bottom
+FOOTER = "Sector5, Vienna, May 10. &amp; 11., 2011"
+
 def svg2pdf(n):
     """convert the n-th svg file to pdf"""
     os.system("inkscape --export-pdf=%s-%s.pdf %s-%s.svg" % (BASEFN, n, BASEFN, n))
@@ -40,7 +45,7 @@ def svg2pdf(n):
 
 # template for QR code, the data is a format scanner apps on smartphones understand as contact information
 # chld=<ECC type (L (only 7% but not so fine structures), M, Q, H)> and after the | is the margin
-QRtmpl = r'http://chart.apis.google.com/chart?cht=qr&chs=200x200&chld=L|0&chl=MECARD%3AN%3A{name}%3BEMAIL%3A{email}%3B%3B'
+QRtmpl = r'http://chart.apis.google.com/chart?cht=qr&chs=200x200&chld=M|0&chl=MECARD%3AN%3A{name}%3BEMAIL%3A{email}%3B%3B'
 
 # in front of each name
 PREFIX = "Hi, I'm"
@@ -70,7 +75,7 @@ print bdims
 unit = "mm" # used in SVG after each dimension value. 
 
 from datetime import datetime
-date = datetime.strftime(datetime.utcnow(), "%d-%m-%Y %H:%M:%S UTC")
+date = datetime.strftime(datetime.utcnow(), "%Y-%m-%d %H:%M:%S UTC")
 
 from string import Template
 
@@ -134,14 +139,45 @@ def save_svg(svg, n):
     svg2pdf(n)
 
 def svg_rect(x,y,dx,dy,col="#000000"):
-  return '''<rect style="fill:none;fill-opacity:1;stroke:{col};stroke-opacity:1"
-          width="{dx}{u}" height="{dy}{u}" x="{x}{u}" y="{y}{u}"
-        />'''.format(x=x, y=y, dx=dx, dy=dy, u=unit, col=col)
+  return u'''\
+  <rect style="fill:none;fill-opacity:1;stroke:{col};stroke-opacity:1"
+    width="{dx}{u}" height="{dy}{u}" x="{x}{u}" y="{y}{u}"
+  />'''.format(x=x, y=y, dx=dx, dy=dy, u=unit, col=col)
 
 def svg_img(x,y,dx,dy,link):
-  return '''<image y="{y}{u}" x="{x}{u}" height="{dy}{u}" width="{dx}{u}" 
-            xlink:href="{link}"
-            />'''.format(x=x, y=y, dx=dx, dy=dy, u=unit, link=link)
+  return u'''\
+  <image y="{y}{u}" x="{x}{u}" height="{dy}{u}" width="{dx}{u}" 
+    xlink:href="{link}"
+  />'''.format(x=x, y=y, dx=dx, dy=dy, u=unit, link=link)
+
+def svg_text(x,y,text, **kwargs):
+    return svg_text_impl([(x,y,text)], **kwargs)
+
+def svg_text_impl(tokens, font="Bitstream Vera Sans Mono", col="#000000", variant="normal", weight = "normal", style="normal", size=10):
+  """
+  tokens is a list of tuples: [(x, y, text)]
+  """
+  t = u'\n'.join([ '<tspan x="%s%s" y="%s%s">%s</tspan>' % (_[0], unit, _[1], unit, _[2]) for _  in tokens])
+  return u'''\
+    <text xml:space="preserve"
+     style="font-size:{size};
+            font-style:{style};
+            font-variant:{variant};
+            font-weight:{weight};
+            font-stretch:normal;
+            text-align:start;
+            line-height:100%;
+            letter-spacing:0px;
+            word-spacing:0px;
+            writing-mode:lr;
+            text-anchor:start;
+            fill:{col};
+            fill-opacity:1;
+            stroke:none;
+            font-family:{font};">\
+     '''.format(size="%f%s"%(size,unit), style=style, variant=variant, weight=weight, col=col, font=font)  + t + "</text>"
+
+
 
 
 # primitive datacontainer
@@ -171,7 +207,7 @@ for cnt, g in enumerate(map(lambda x : Guest._make(x[:2]), content)):
   #print g.name, urllib2.quote(g.email), url
 
   # unique name for qr file (add name, some have no email!)
-  qrname = g.name.strip().replace(" ", "_").decode("utf8")
+  qrname = str(hash(g.name))
   qrname += g.email.replace("@", ".").strip()
 
   # where to write to
@@ -201,7 +237,17 @@ for cnt, g in enumerate(map(lambda x : Guest._make(x[:2]), content)):
 
   # for testing the actual borders
   svg += svg_rect(offset[0], offset[1], bdims[1], bdims[0], "#ccc")
+  svg += svg_text(offset[0] + 1, offset[1] + 10, g.name.lower().decode("utf8"), size=4.5, weight="bold")
+  svg += svg_text(offset[0] + 1, offset[1] + 16, g.email.lower(),               size=4, col="#333")
 
+  # QR
+  svg += svg_img(offset[0] + bdims[1] - 33, offset[1] + bdims[0] - 33, 31, 31, qrpath)
+  # Logo
+  svg += svg_img(offset[0] + bdims[1] - 33, offset[1] + 4, 31, 9, IOLOGO)
+  # Teaser
+  svg += svg_text(offset[0] + 1, offset[1] + 20, TEASER, size=2, col="#ccc")
+  # Footer
+  svg += svg_text(offset[0] + 1, offset[1] + bdims[0] - 2, FOOTER, col="#333", variant="italic", size=2.5)
 
 
 
