@@ -37,7 +37,7 @@ IOLOGO = "io-extended-logo.png" # TODO check for updates in 2012 and later
 COLORSTRIP = "google-io-colorstrip.png"
 
 # text at the bottom
-FOOTER = "Sector5, Vienna, May 10. &amp; 11., 2011"
+FOOTER = "sektor5, vienna, may 10. &amp; 11., 2011"
 
 def svg2pdf(n):
     """convert the n-th svg file to pdf"""
@@ -71,7 +71,7 @@ bspace = 0, 0
 bdims = float(pdims[0] - pmargin[0] - pmargin[2] - bspace[0] * (rows-1)) / rows,\
         float(pdims[1] - pmargin[3] - pmargin[1] - bspace[1] * (cols-1)) / cols 
 
-print bdims
+#print bdims
 
 unit = "mm" # used in SVG after each dimension value. 
 
@@ -114,8 +114,6 @@ SVG_intro = Template('''\
 <g id="papersheet">
 ''').substitute(date=date, width=("%s"+unit) % pdims[1], height=("%s"+unit) % pdims[0])
 
-print SVG_intro
-
 SVG_outro = r'''
 </g>
 </svg>
@@ -136,7 +134,7 @@ def save_svg(svg, n):
   SVGFN = "%s-%d.svg" % (BASEFN, n)
   with codecs.open(SVGFN, 'w', 'utf-8-sig') as svgfile:
     svgfile.write(svg)
-    print "output html written to", os.path.abspath(SVGFN)
+    print "output svg written to", os.path.abspath(SVGFN)
     svg2pdf(n)
 
 def svg_rect(x,y,dx,dy,col="#000000"):
@@ -198,6 +196,9 @@ content.next() # skip header
 svg = None  # svg file string content
 n   = 0     # n-th page
 
+longest_name = ""
+longest_page = 0
+
 # iterate over each named tuple Guest generated for each first 2 elements in csv list of lists
 # if your CSV list doesn't start with name and email, you have to pick other columns
 for cnt, g in enumerate(map(lambda x : Guest._make(x[:2]), content)):
@@ -206,6 +207,9 @@ for cnt, g in enumerate(map(lambda x : Guest._make(x[:2]), content)):
   url = QRtmpl.format(name=urllib2.quote(g.name), email=urllib2.quote(g.email))
 
   #print g.name, urllib2.quote(g.email), url
+  if len(g.name) > len(longest_name):
+    longest_name = g.name
+    longest_page = n
 
   # unique name for qr file (add name, some have no email!)
   qrname = str(hash(g.name))
@@ -238,19 +242,26 @@ for cnt, g in enumerate(map(lambda x : Guest._make(x[:2]), content)):
 
   # for testing the actual borders
   #svg += svg_rect(offset[0], offset[1], bdims[1], bdims[0], "#ccc")
-  svg += svg_text(offset[0] + 4, offset[1] + 10, g.name.lower().decode("utf8"), size=4.5, weight="bold")
-  svg += svg_text(offset[0] + 4, offset[1] + 16, g.email.lower(),               size=4, col="#333")
-
+  svg += svg_text(offset[0] + 5, offset[1] + 10, g.name.lower().decode("utf8"), size=5.8, weight="bold")
+  #svg += svg_text(offset[0] + 4, offset[1] + 16, g.email.lower(),               size=4, col="#333")
+  # Teaser
+  svg += svg_text(offset[0] + 6, offset[1] + 13, TEASER, size=2, col="#ccc")
   # QR
-  svg += svg_img(offset[0] + bdims[1] - 33, offset[1] + bdims[0] - 33, 31, 31, qrpath)
+  qrdim = 25
+  svg += svg_img(offset[0] + bdims[1] - qrdim - 1, offset[1] + bdims[0] - qrdim - 1, qrdim, qrdim, qrpath)
   # Logo
-  svg += svg_img(offset[0] + bdims[1] - 33, offset[1] + 5, 31, 9, IOLOGO)
+  lwidth = 60
+  lheight = (lwidth/278.0)*79
+  svg += svg_img(offset[0] + 6, offset[1] + bdims[0] - qrdim - 1, lwidth, lheight, IOLOGO)
   # colorstrip
   svg += svg_img(offset[0], offset[1] + 3, 3, bdims[0] - 4, COLORSTRIP)
-  # Teaser
-  svg += svg_text(offset[0] + 4, offset[1] + 20, TEASER, size=2, col="#ccc")
   # Footer
-  svg += svg_text(offset[0] + 4, offset[1] + bdims[0] - 2, FOOTER, col="#333", variant="italic", size=2.5)
+  svg += svg_text(offset[0] + 5, offset[1] + bdims[0] - 1, FOOTER, col="#333", variant="italic", size=2.9)
 
+# close last page
+svg += SVG_outro
+save_svg(svg, n)
+
+print "Longest Name:", longest_name, "on page", longest_page
 
 
