@@ -59,6 +59,15 @@ def svg2pdf(n):
     os.system("inkscape --export-pdf=%s-%s.pdf %s-%s.svg" % (BASEFN, n, BASEFN, n))
     print "converted svg %d to pdf" % n
 
+def post_hook():
+  """
+  this is called after everthing is done. it combines all PDFs into one using pdftk.
+  """
+  os.system("pdftk %s-*.pdf output %s.pdf" % (BASEFN, BASEFN))
+  # this one is for convert, not tested
+  #os.system("convert %s-*.pdf %s.pdf" % (BASEFN, BASEFN))
+  print "collected all PDFs into %s.pdf" % BASEFN
+
 # template for QR code, the data is a format scanner apps on smartphones understand as contact information
 # chld=<ECC type (L (only 7% but not so fine structures), M, Q, H)> and after the | is the margin
 QRtmpl = r'http://chart.apis.google.com/chart?cht=qr&chs=200x200&chld=M|0&chl=MECARD%3AN%3A{name}%3BEMAIL%3A{email}%3B%3B'
@@ -137,7 +146,7 @@ SVG_outro = r'''
 ### actual Code starts here
 
 import csv, urllib2, os, sys
-from md5 import md5
+from hashlib import md5
 from collections import namedtuple
 
 # QR code images end up in qr. delete the whole dir to refresh them.
@@ -286,4 +295,4 @@ save_svg(svg, n)
 
 print "Longest Name:", longest_name, "on page", longest_page
 
-
+post_hook()
