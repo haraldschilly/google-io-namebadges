@@ -269,10 +269,10 @@ for cnt, g in enumerate(map(lambda x : Guest._make(x[:2]), content)):
 
   # for testing the actual borders
   #svg += svg_rect(offset[0], offset[1], bdims[1], bdims[0], "#ccc")
-  svg += svg_text(offset[0] + 5, offset[1] + 10, g.name.lower().decode("utf8"), size=5.8, weight="bold")
+  svg += svg_text(offset[0] + 5, offset[1] + 11, g.name.lower().decode("utf8"), size=6, weight="bold")
   #svg += svg_text(offset[0] + 4, offset[1] + 16, g.email.lower(),               size=4, col="#333")
   # Teaser
-  svg += svg_text(offset[0] + 6, offset[1] + 13, TEASER, size=2, col="#ccc")
+  svg += svg_text(offset[0] + 6, offset[1] + 15, TEASER, size=2, col="#ccc")
   # Logo Host (e.g. 242x242 original)
   hwidth = 15
   hheight = (hwidth/242.0) * 242.0
