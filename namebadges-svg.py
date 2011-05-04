@@ -52,7 +52,7 @@ COLORSTRIP = "google-io-colorstrip.png"
 HOSTLOGO = "sektor5-logo.png"
 
 # text at the bottom
-FOOTER = "sektor5, vienna, may 10. &amp; 11., 2011"
+FOOTER = "sektor5 vienna 10. &amp; 11. may 2011"
 
 def svg2pdf(n):
     """convert the n-th svg file to pdf"""
@@ -276,7 +276,7 @@ for cnt, g in enumerate(map(lambda x : Guest._make(x[:2]), content)):
   # Logo Host (e.g. 242x242 original)
   hwidth = 15
   hheight = (hwidth/242.0) * 242.0
-  svg += svg_img(offset[0] + 52,  offset[1] + bdims[0] - 16, hwidth, hheight, HOSTLOGO)
+  svg += svg_img(offset[0] + 51,  offset[1] + bdims[0] - 16, hwidth, hheight, HOSTLOGO)
   # Logo IO
   lwidth = 40
   lheight = (lwidth/278.0)*79
@@ -285,9 +285,9 @@ for cnt, g in enumerate(map(lambda x : Guest._make(x[:2]), content)):
   svg += svg_img(offset[0], offset[1] + 3, 3, bdims[0] - 4, COLORSTRIP)
   # QR
   qrdim = 22
-  svg += svg_img(offset[0] + bdims[1] - qrdim - 1, offset[1] + bdims[0] - qrdim - 1, qrdim, qrdim, qrpath)
+  svg += svg_img(offset[0] + bdims[1] - qrdim - 2, offset[1] + bdims[0] - qrdim - 1, qrdim, qrdim, qrpath)
   # Footer
-  svg += svg_text(offset[0] + 5, offset[1] + bdims[0] - qrdim + 2, FOOTER, col="#333", variant="italic", size=3.05)
+  svg += svg_text(offset[0] + 5, offset[1] + bdims[0] - qrdim + 2, FOOTER, col="#333", variant="italic", size=3.20)
 
 # close last page
 svg += SVG_outro
