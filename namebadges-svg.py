@@ -26,15 +26,30 @@
 # Outputs a SVG file called SVGFN with proper formatting for printing (default A4)
 # you can either print the SVG directly (e.g. inkscape) or use inkscape to render a beautiful PDF (default).
 
+import sys
 ### SETTINGS
 
-# input filename (csv, column 0 = name, column 1 = email)
-CSVFN = u'Google I%2FO Extended RSVP.csv'
+# input filename (csv)
+# example content:
+# name,email,... [remaining fields don't matter]
+# "firstname1 name1","email@email.com",...
+# ...
+if len(sys.argv) != 2:
+  print "USAGE: %s filename.csv" % sys.argv[0]
+  print 
+  print "example content (CSV file, with one header line):"
+  print "name,email,... [remaining fields don't matter]"
+  print '"firstname1 name1","email@email.com",...'
+  sys.exit(1)
+CSVFN = sys.argv[1]
 # output filename common prefix
-BASEFN = "google-io-extended-badges"
+BASEFN = CSVFN.replace(".csv", "")
 
 IOLOGO = "io-extended-logo.png" # TODO check for updates in 2012 and later
 COLORSTRIP = "google-io-colorstrip.png"
+
+# logo of the host
+HOSTLOGO = "sektor5-logo.png"
 
 # text at the bottom
 FOOTER = "sektor5, vienna, may 10. &amp; 11., 2011"
@@ -122,6 +137,7 @@ SVG_outro = r'''
 ### actual Code starts here
 
 import csv, urllib2, os, sys
+from md5 import md5
 from collections import namedtuple
 
 # QR code images end up in qr. delete the whole dir to refresh them.
@@ -212,8 +228,10 @@ for cnt, g in enumerate(map(lambda x : Guest._make(x[:2]), content)):
     longest_page = n
 
   # unique name for qr file (add name, some have no email!)
-  qrname = str(hash(g.name))
-  qrname += g.email.replace("@", ".").strip()
+  qrname = md5()
+  qrname.update(g.name)
+  qrname = qrname.hexdigest()
+  qrname += "-%s" % g.email.replace("@", ".").strip()
 
   # where to write to
   qrpath = os.path.join("qr", qrname + ".png")
@@ -246,17 +264,21 @@ for cnt, g in enumerate(map(lambda x : Guest._make(x[:2]), content)):
   #svg += svg_text(offset[0] + 4, offset[1] + 16, g.email.lower(),               size=4, col="#333")
   # Teaser
   svg += svg_text(offset[0] + 6, offset[1] + 13, TEASER, size=2, col="#ccc")
-  # QR
-  qrdim = 25
-  svg += svg_img(offset[0] + bdims[1] - qrdim - 1, offset[1] + bdims[0] - qrdim - 1, qrdim, qrdim, qrpath)
-  # Logo
-  lwidth = 60
+  # Logo Host (e.g. 242x242 original)
+  hwidth = 15
+  hheight = (hwidth/242.0) * 242.0
+  svg += svg_img(offset[0] + 52,  offset[1] + bdims[0] - 16, hwidth, hheight, HOSTLOGO)
+  # Logo IO
+  lwidth = 40
   lheight = (lwidth/278.0)*79
-  svg += svg_img(offset[0] + 6, offset[1] + bdims[0] - qrdim - 1, lwidth, lheight, IOLOGO)
+  svg += svg_img(offset[0] + 6, offset[1] + bdims[0] - lheight - 2, lwidth, lheight, IOLOGO)
   # colorstrip
   svg += svg_img(offset[0], offset[1] + 3, 3, bdims[0] - 4, COLORSTRIP)
+  # QR
+  qrdim = 22
+  svg += svg_img(offset[0] + bdims[1] - qrdim - 1, offset[1] + bdims[0] - qrdim - 1, qrdim, qrdim, qrpath)
   # Footer
-  svg += svg_text(offset[0] + 5, offset[1] + bdims[0] - 1, FOOTER, col="#333", variant="italic", size=2.9)
+  svg += svg_text(offset[0] + 5, offset[1] + bdims[0] - qrdim + 2, FOOTER, col="#333", variant="italic", size=3.05)
 
 # close last page
 svg += SVG_outro
