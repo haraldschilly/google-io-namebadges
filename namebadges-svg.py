@@ -56,6 +56,7 @@ FOOTER = "sektor5 vienna 10. &amp; 11. may 2011"
 
 def svg2pdf(n):
     """convert the n-th svg file to pdf"""
+    # if you change the filepattern, you also have to change it in other spots
     os.system("inkscape --export-pdf=%s-%s.pdf %s-%s.svg" % (BASEFN, n, BASEFN, n))
     print "converted svg %d to pdf" % n
 
@@ -63,6 +64,7 @@ def post_hook():
   """
   this is called after everthing is done. it combines all PDFs into one using pdftk.
   """
+  # if you change the filepattern, you also have to change it in other spots
   os.system("pdftk %s-*.pdf output %s.pdf" % (BASEFN, BASEFN))
   # this one is for convert, not tested
   #os.system("convert %s-*.pdf %s.pdf" % (BASEFN, BASEFN))
@@ -96,14 +98,13 @@ bdims = float(pdims[0] - pmargin[0] - pmargin[2] - bspace[0] * (rows-1)) / rows,
         float(pdims[1] - pmargin[3] - pmargin[1] - bspace[1] * (cols-1)) / cols 
 
 #print bdims
-
 unit = "mm" # used in SVG after each dimension value. 
 
+# SVG basics (motivated people might wanna create a class :-)
 from datetime import datetime
 date = datetime.strftime(datetime.utcnow(), "%Y-%m-%d %H:%M:%S UTC")
 
 from string import Template
-
 SVG_intro = Template('''\
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!-- Created with google-io-badge-generator (http://code.google.com/p/google-io-namebadges/) -->
@@ -152,10 +153,19 @@ from collections import namedtuple
 # QR code images end up in qr. delete the whole dir to refresh them.
 if not os.path.exists("qr"): os.mkdir("qr")
 
+# delete existing files
+from glob import glob
+for pat in ["%s-*.pdf", "%s-*.svg"]:
+  for f in glob(pat % BASEFN):
+    os.remove(f)
+
+# SVG specific functions
+
 def save_svg(svg, n):
   """
   saves the n-th svg file from the string svg
   """
+  # if you change SVGFN, you also have to change the delete pattern above
   SVGFN = "%s-%d.svg" % (BASEFN, n)
   with codecs.open(SVGFN, 'w', 'utf-8-sig') as svgfile:
     svgfile.write(svg)
@@ -225,7 +235,8 @@ longest_name = ""
 longest_page = 0
 
 # iterate over each named tuple Guest generated for each first 2 elements in csv list of lists
-# if your CSV list doesn't start with name and email, you have to pick other columns
+# if your CSV list doesn't start with name and email, you have to pick other columns,
+# e.g. _make([x[1], x[5])
 for cnt, g in enumerate(map(lambda x : Guest._make(x[:2]), content)):
 
   # use QRtmpl template from above to construct url
@@ -273,7 +284,7 @@ for cnt, g in enumerate(map(lambda x : Guest._make(x[:2]), content)):
   svg += svg_text(offset[0] + 5, offset[1] + 9, g.name.lower().decode("utf8"), size=6, weight="bold")
   #svg += svg_text(offset[0] + 4, offset[1] + 16, g.email.lower(),               size=4, col="#333")
   # Teaser
-  svg += svg_text(offset[0] + 6, offset[1] + 13, TEASER, size=2, col="#ccc")
+  svg += svg_text(offset[0] + 6, offset[1] + 13, TEASER, size=2, col="#bbb")
   # Logo Host (e.g. 242x242 original)
   hwidth = 15
   hheight = (hwidth/242.0) * 242.0
