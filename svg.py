@@ -73,15 +73,15 @@ class SVG(object):
     
 
   def __iadd__(self, string):
-    self._svg += string
+    self._svg += string + '\n'
     return self
 
   def line(self, start, end, col="#000000", width=None):
     if width==None:
-      width = "1%s" % self.unit
+      width = "0.1%s" % self.unit
     u = self.unit
     self._svg += '<line x1="%s%s" y1="%s%s" x2="%s%s" y2="%s%s" style="stroke:%s;stroke-width:%s"/>'\
-                 %(start[0], u, start[1], u, end[0], u, end[1], u, width, col)
+                 %(start[0], u, start[1], u, end[0], u, end[1], u, col, width)
 
   def rect(self, x, y, dx, dy, col="#000000"):
     self._svg += u'''\

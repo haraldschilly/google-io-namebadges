@@ -71,32 +71,6 @@ unit = C.get("page", "unit")
 name_idx = C.getint("csv", "name_index")
 email_idx = C.getint("csv", "email_index")
 
-# calculating badge size info (height and width)
-bdims = float(pdims[0] - pmargin[0] - pmargin[2] - bspace[0] * (rows-1)) / rows,\
-        float(pdims[1] - pmargin[3] - pmargin[1] - bspace[1] * (cols-1)) / cols 
-
-# utility functions
-def svg2pdf(n):
-    """convert the n-th svg file to pdf"""
-    # if you change the filepattern, you also have to change it in other spots
-    os.system("inkscape --export-pdf=%s-%s.pdf %s-%s.svg" % (BASEFN, n, BASEFN, n))
-    print "converted svg %d to pdf" % n
-
-def save_svg(svg, n):
-  """
-  saves the n-th svg file from the string svg
-  """
-  # if you change SVGFN, you also have to change the delete pattern above
-  SVGFN = "%s-%d.svg" % (BASEFN, n)
-  draw_cutmarks(svg)
-  draw_info(svg, n)
-  svg = svg.finalize()
-  with codecs.open(SVGFN, 'w', 'utf-8-sig') as svgfile:
-    svgfile.write(svg)
-    print "output svg written to", os.path.abspath(SVGFN)
-  svg2pdf(n)
-
-
 ### actual Code starts here
 
 import csv, urllib2, os, sys
@@ -116,8 +90,14 @@ for pat in ["%s-*.pdf", "%s-*.svg"]:
 from svg import SVG
 
 
+# calculating badge size info (height and width)
+bdims = float(pdims[0] - pmargin[0] - pmargin[2] - bspace[0] * (rows-1)) / rows,\
+        float(pdims[1] - pmargin[3] - pmargin[1] - bspace[1] * (cols-1)) / cols 
 
 def draw_badge(svg, cnt, g, qrpath):
+  """
+  here is the actual layout defined
+  """
   # calc position on page, (x,y)
   offsetcnt = cnt % cols, (cnt % (rows*cols)) / cols 
   offset = pmargin[3] + offsetcnt[0] * (bdims[1] + bspace[1]),\
@@ -162,6 +142,24 @@ def draw_info(svg, n):
   date = datetime.strftime(datetime.utcnow(), "%Y-%m-%d %H:%M:%S UTC")
   svg.text(pmargin[3], pmargin[0] - 1, "%s - %s - %s" % (CSVFN, n, date), size=2)
 
+
+# utility function
+def save_svg(svg, n):
+  """
+  saves the n-th svg file from the string svg
+  """
+  # if you change SVGFN, you also have to change the delete pattern above
+  SVGFN = "%s-%d.svg" % (BASEFN, n)
+  draw_cutmarks(svg)
+  draw_info(svg, n)
+  svg = svg.finalize()
+  with codecs.open(SVGFN, 'w', 'utf-8-sig') as svgfile:
+    svgfile.write(svg)
+    print "output svg written to", os.path.abspath(SVGFN)
+  # now convert the n-th svg file to pdf using inkscape
+  # if you change the filepattern, you also have to change it in other spots
+  os.system("inkscape --export-pdf=%s-%s.pdf %s-%s.svg" % (BASEFN, n, BASEFN, n))
+  print "converted svg %d to pdf" % n
 
 
 # primitive datacontainer
