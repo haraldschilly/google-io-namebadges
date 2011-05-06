@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- encoding:utf-8 -*-
-
+#
 # Copyright 2011 Harald Schilly <harald@gtug.at>
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -68,6 +68,8 @@ rows = C.getint("page", "rows")
 cols = C.getint("page", "cols")
 bspace = C.getfloat("page", "bspaceheight"), C.getfloat("page", "bspacewidth")
 unit = C.get("page", "unit")
+name_idx = C.getint("csv", "name_index")
+email_idx = C.getint("csv", "email_index")
 
 # calculating badge size info (height and width)
 bdims = float(pdims[0] - pmargin[0] - pmargin[2] - bspace[0] * (rows-1)) / rows,\
@@ -80,60 +82,18 @@ def svg2pdf(n):
     os.system("inkscape --export-pdf=%s-%s.pdf %s-%s.svg" % (BASEFN, n, BASEFN, n))
     print "converted svg %d to pdf" % n
 
-def post_hook():
+def save_svg(svg, n):
   """
-  this is called after everthing is done. it combines all PDFs into one using pdftk.
+  saves the n-th svg file from the string svg
   """
-  # if you change the filepattern, you also have to change it in other spots
-  os.system("pdftk %s-*.pdf output %s.pdf" % (BASEFN, BASEFN))
-  # this one is for convert, not tested
-  #os.system("convert %s-*.pdf %s.pdf" % (BASEFN, BASEFN))
-  print "collected all PDFs into %s.pdf" % BASEFN
+  # if you change SVGFN, you also have to change the delete pattern above
+  SVGFN = "%s-%d.svg" % (BASEFN, n)
+  svg = svg.finalize()
+  with codecs.open(SVGFN, 'w', 'utf-8-sig') as svgfile:
+    svgfile.write(svg)
+    print "output svg written to", os.path.abspath(SVGFN)
+  svg2pdf(n)
 
-
-# SVG basics 
-from datetime import datetime
-date = datetime.strftime(datetime.utcnow(), "%Y-%m-%d %H:%M:%S UTC")
-
-from string import Template
-SVG_intro = Template('''\
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!-- Created with google-io-badge-generator (http://code.google.com/p/google-io-namebadges/) -->
-
-<svg
- xmlns:dc="http://purl.org/dc/elements/1.1/"
- xmlns:cc="http://creativecommons.org/ns#"
- xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
- xmlns:svg="http://www.w3.org/2000/svg"
- xmlns="http://www.w3.org/2000/svg"
- xmlns:xlink="http://www.w3.org/1999/xlink"
- width="$width"
- height="$height"
- version="1.1"
->
-<title>Google I/O Namebadges</title>
-<metadata>
- <rdf:RDF>
-  <cc:Work rdf:about="">
-   <dc:format>image/svg+xml</dc:format>
-   <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-   <dc:title>Google I/O Namebadges</dc:title>
-   <dc:date>$date</dc:date>
-   <dc:creator>
-    <cc:Agent>
-     <dc:title>http://code.google.com/p/google-io-namebadges/</dc:title>
-    </cc:Agent>
-   </dc:creator>
-  </cc:Work>
- </rdf:RDF>
-</metadata>
-<g id="papersheet">
-''').substitute(date=date, width="%s%s" % (pdims[1], unit), height="%s%s"% (pdims[0],unit))
-
-SVG_outro = r'''
-</g>
-</svg>
-'''
 
 ### actual Code starts here
 
@@ -151,89 +111,41 @@ for pat in ["%s-*.pdf", "%s-*.svg"]:
     os.remove(f)
 
 # SVG specific functions
-
-def save_svg(svg, n):
-  """
-  saves the n-th svg file from the string svg
-  """
-  # if you change SVGFN, you also have to change the delete pattern above
-  SVGFN = "%s-%d.svg" % (BASEFN, n)
-  with codecs.open(SVGFN, 'w', 'utf-8-sig') as svgfile:
-    svgfile.write(svg)
-    print "output svg written to", os.path.abspath(SVGFN)
-    svg2pdf(n)
-
-def svg_rect(x,y,dx,dy,col="#000000"):
-  return u'''\
-  <rect style="fill:none;fill-opacity:1;stroke:{col};stroke-opacity:1"
-    width="{dx}{u}" height="{dy}{u}" x="{x}{u}" y="{y}{u}"
-  />'''.format(x=x, y=y, dx=dx, dy=dy, u=unit, col=col)
-
-def svg_img(x,y,dx,dy,link):
-  return u'''\
-  <image y="{y}{u}" x="{x}{u}" height="{dy}{u}" width="{dx}{u}" 
-    xlink:href="{link}"
-  />'''.format(x=x, y=y, dx=dx, dy=dy, u=unit, link=link)
-
-def svg_text(x,y,text, **kwargs):
-    return svg_text_impl([(x,y,text)], **kwargs)
-
-def svg_text_impl(tokens, font="Bitstream Vera Sans Mono", col="#000000", variant="normal", weight = "normal", style="normal", size=10):
-  """
-  tokens is a list of tuples: [(x, y, text)]
-  """
-  t = u'\n'.join([ '<tspan x="%s%s" y="%s%s">%s</tspan>' % (_[0], unit, _[1], unit, _[2]) for _  in tokens])
-  return u'''\
-    <text xml:space="preserve"
-     style="font-size:{size};
-            font-style:{style};
-            font-variant:{variant};
-            font-weight:{weight};
-            font-stretch:normal;
-            text-align:start;
-            line-height:100%;
-            letter-spacing:0px;
-            word-spacing:0px;
-            writing-mode:lr;
-            text-anchor:start;
-            fill:{col};
-            fill-opacity:1;
-            stroke:none;
-            font-family:{font};">\
-     '''.format(size="%f%s"%(size,unit), style=style, variant=variant, weight=weight, col=col, font=font)  + t + "</text>"
+from svg import SVG
 
 
-def draw_badge(cnt, g):
+
+def draw_badge(svg, cnt, g):
   # calc position on page, (x,y)
   offsetcnt = cnt % cols, (cnt % (rows*cols)) / cols 
   offset = pmargin[3] + offsetcnt[0] * (bdims[1] + bspace[1]),\
            pmargin[0] + offsetcnt[1] * (bdims[0] + bspace[0])
 
-  svg = unicode()
   # for testing the actual borders
   #svg += svg_rect(offset[0], offset[1], bdims[1], bdims[0], "#ccc")
   # name
-  svg += svg_text(offset[0] + 5, offset[1] + 9, g.name.lower().decode("utf8"), size=6, weight="bold")
+  svg.text(offset[0] + 5, offset[1] + 11, g.name.lower().decode("utf8"), size=6, weight="bold")
   #svg += svg_text(offset[0] + 4, offset[1] + 16, g.email.lower(),               size=4, col="#333")
   # Teaser
-  svg += svg_text(offset[0] + 6, offset[1] + 13, TEASER, size=2, col="#bbb")
+  svg.text(offset[0] + 6, offset[1] + 14, TEASER, size=2, col="#b0b0b0")
   # Logo Host (e.g. 242x242 original)
   hwidth = 15
   hheight = (hwidth/242.0) * 242.0
-  svg += svg_img(offset[0] + 51,  offset[1] + bdims[0] - 16, hwidth, hheight, HOSTLOGO)
+  svg.image(offset[0] + 51,  offset[1] + bdims[0] - 16, hwidth, hheight, HOSTLOGO)
   # Logo IO
   lwidth = 40
   lheight = (lwidth/278.0)*79
-  svg += svg_img(offset[0] + 6, offset[1] + bdims[0] - lheight - 2, lwidth, lheight, IOLOGO)
+  svg.image(offset[0] + 6, offset[1] + bdims[0] - lheight - 2, lwidth, lheight, IOLOGO)
   # colorstrip
-  svg += svg_img(offset[0], offset[1] + 3, 3, bdims[0] - 4, COLORSTRIP)
+  svg.image(offset[0], offset[1] + 3, 3, bdims[0] - 4, COLORSTRIP)
   # QR
   qrdim = 22
-  svg += svg_img(offset[0] + bdims[1] - qrdim - 2, offset[1] + bdims[0] - qrdim - 1, qrdim, qrdim, qrpath)
+  svg.image(offset[0] + bdims[1] - qrdim - 2, offset[1] + bdims[0] - qrdim - 1, qrdim, qrdim, qrpath)
   # Footer
-  svg += svg_text(offset[0] + 5, offset[1] + bdims[0] - qrdim + 2, FOOTER, col="#333", variant="italic", size=3.20)
-  return svg
+  svg.text(offset[0] + 5, offset[1] + bdims[0] - qrdim + 2, FOOTER, col="#333", variant="italic", size=3.20)
 
+def draw_cutmarks(svg):
+  return u''
 
 # primitive datacontainer
 Guest = namedtuple('Guest', ['name', 'email'])
@@ -249,16 +161,14 @@ except IOError, msg:
 content.next() # skip header
 
 # initialized and used in the for loop
-svg = None  # svg file string content
-n   = 0     # n-th page
+svg = None # svg file content
+n   = 0          # n-th page
 
 longest_name = ""
 longest_page = 0
 
 # iterate over each named tuple Guest generated for each first 2 elements in csv list of lists
-# if your CSV list doesn't start with name and email, you have to pick other columns,
-# e.g. _make([x[1], x[5])
-data = map(lambda x : Guest._make(x[:2]), content)
+data = map(lambda _ : Guest._make([_[name_idx], _[email_idx]]), content)
 
 # iterate over sorted list by surname. names like "  name   surname  " are fine.
 for cnt, g in enumerate(sorted(data, key = lambda _:_.name.strip().split(" ")[-1])):
@@ -291,19 +201,22 @@ for cnt, g in enumerate(sorted(data, key = lambda _:_.name.strip().split(" ")[-1
   if cnt % (rows * cols) == 0:
     if svg != None:
        # save the file
-       svg += SVG_outro
        save_svg(svg, n)
        n += 1
-    svg = unicode()
-    svg += SVG_intro
+    svg = SVG(pdims, unit)
 
-  svg += draw_badge(cnt, g)
+  draw_badge(svg, cnt, g)
+  draw_cutmarks(svg)
 
 
 # close last page
-svg += SVG_outro
 save_svg(svg, n)
 
-print "Longest Name:", longest_name, "on page", longest_page
+print "Check longest name'", longest_name, "'on page", longest_page, "for clipping."
 
-post_hook()
+# this is for after everthing is done. it combines all PDFs into one using pdftk.
+# if you change the filepattern, you also have to change it in other spots
+os.system("pdftk %s-*.pdf output %s.pdf" % (BASEFN, BASEFN))
+# this one is for convert, not tested
+#os.system("convert %s-*.pdf %s.pdf" % (BASEFN, BASEFN))
+print "Collected all PDFs into %s.pdf" % BASEFN
