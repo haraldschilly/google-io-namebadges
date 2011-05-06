@@ -33,7 +33,7 @@ import sys
 # name,email,... [remaining fields don't matter]
 # "firstname1 name1","email@email.com",...
 # ...
-if len(sys.argv) != 2:
+if len(sys.argv) <= 1:
   print "USAGE: %s filename.csv [settings.ini]" % sys.argv[0]
   print 
   print "example content (CSV file, with one header line):"
