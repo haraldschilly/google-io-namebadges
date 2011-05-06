@@ -88,6 +88,8 @@ def save_svg(svg, n):
   """
   # if you change SVGFN, you also have to change the delete pattern above
   SVGFN = "%s-%d.svg" % (BASEFN, n)
+  draw_cutmarks(svg)
+  draw_info(svg, n)
   svg = svg.finalize()
   with codecs.open(SVGFN, 'w', 'utf-8-sig') as svgfile:
     svgfile.write(svg)
@@ -145,7 +147,22 @@ def draw_badge(svg, cnt, g):
   svg.text(offset[0] + 5, offset[1] + bdims[0] - qrdim + 2, FOOTER, col="#333", variant="italic", size=3.20)
 
 def draw_cutmarks(svg):
-  return u''
+  # top and bottom
+  for c in range(cols + 1):
+    x = pmargin[3] + c * (bdims[1] + bspace[1]) - bspace[1] / 2.0 - 1
+    svg.line((x, 0),                                     (x, pmargin[0] - bspace[0] - 1))
+    svg.line((x, pdims[0] - pmargin[2] + bspace[1] + 2), (x, pdims[0]))
+  for r in range(rows + 1):
+    y = pmargin[0] + r * (bdims[0] + bspace[0]) - bspace[0] / 2.0 + 1
+    svg.line((0, y),                                     (pmargin[3] - bspace[1] - 2, y))
+    svg.line((pdims[1] - pmargin[1] + bspace[0] + 1, y), (pdims[1], y))
+
+def draw_info(svg, n):
+  from datetime import datetime
+  date = datetime.strftime(datetime.utcnow(), "%Y-%m-%d %H:%M:%S UTC")
+  svg.text(pmargin[3], pmargin[0] - 1, "%s - %s - %s" % (CSVFN, n, date), size=2)
+
+
 
 # primitive datacontainer
 Guest = namedtuple('Guest', ['name', 'email'])
@@ -206,7 +223,6 @@ for cnt, g in enumerate(sorted(data, key = lambda _:_.name.strip().split(" ")[-1
     svg = SVG(pdims, unit)
 
   draw_badge(svg, cnt, g)
-  draw_cutmarks(svg)
 
 
 # close last page
