@@ -35,6 +35,7 @@ import sys
 # ...
 if len(sys.argv) <= 1:
   print "USAGE: %s filename.csv [settings.ini]" % sys.argv[0]
+  print "       %s empty    ... to produce a sheet without names" % sys.argv[0]
   print 
   print "example content (CSV file, with one header line):"
   print "name,email,... [remaining fields don't matter]"
@@ -42,9 +43,13 @@ if len(sys.argv) <= 1:
   print
   print "you can optionally specify a settings file as second argument"
   sys.exit(1)
-CSVFN = sys.argv[1]
-# output filename common prefix
-BASEFN = CSVFN.replace(".csv", "")
+
+CSVFN = None
+BASEFN = "empty"
+if sys.argv[1] != "empty":
+  CSVFN = sys.argv[1]
+  # output filename common prefix
+  BASEFN = CSVFN.replace(".csv", "")
 
 # settings file as optional second argument
 SETTINGSFN = "settings.ini"
@@ -122,7 +127,8 @@ def draw_badge(svg, cnt, g, qrpath):
   svg.image(offset[0], offset[1] + 3, 3, bdims[0] - 4, COLORSTRIP)
   # QR
   qrdim = 22
-  svg.image(offset[0] + bdims[1] - qrdim - 2, offset[1] + bdims[0] - qrdim - 1, qrdim, qrdim, qrpath)
+  if len(g.name) > 0:
+    svg.image(offset[0] + bdims[1] - qrdim - 2, offset[1] + bdims[0] - qrdim - 1, qrdim, qrdim, qrpath)
   # Footer
   svg.text(offset[0] + 5, offset[1] + bdims[0] - qrdim + 2, FOOTER, col="#333", variant="italic", size=3.20)
 
@@ -140,7 +146,8 @@ def draw_cutmarks(svg):
 def draw_info(svg, n):
   from datetime import datetime
   date = datetime.strftime(datetime.utcnow(), "%Y-%m-%d %H:%M:%S UTC")
-  svg.text(pmargin[3], pmargin[0] - 1, "%s - %s - %s" % (CSVFN, n, date), size=2)
+  fn = CSVFN if CSVFN != None else "empty sheet"
+  svg.text(pmargin[3], pmargin[0] - 1, "%s - %s - %s" % (fn, n, date), size=2)
 
 
 # utility function
@@ -165,9 +172,25 @@ def save_svg(svg, n):
 # primitive datacontainer
 Guest = namedtuple('Guest', ['name', 'email'])
 
+class Empty(object):
+  # fake data to produce empty ones if option empty is set
+  def __init__(self, n):
+    self.n = n
+  def __iter__(self):
+    self.i = 0
+    while self.i < self.n:
+      yield self
+      self.i += 1
+  def __getitem__(self,index):
+    return ""
+
 import codecs
 try:
-  content = csv.reader(codecs.open(CSVFN, "rb"))
+  if CSVFN != None:
+    content = csv.reader(codecs.open(CSVFN, "rb"))
+  else:
+    content = Empty(rows * cols + 1).__iter__()
+
 except IOError, msg:
   print "You need a CSV file '%s' (=CSVFN variable) in the current directory." % CSVFN
   print msg
@@ -206,7 +229,7 @@ for cnt, g in enumerate(sorted(data, key = lambda _:_.name.strip().split(" ")[-1
   qrpath = os.path.join("qr", qrname + ".png")
 
   # only if we not already have it
-  if not os.path.exists(qrpath):
+  if not os.path.exists(qrpath) and len(g.name) > 0:
     print ">> downloading %s" % qrpath                        
     with open(qrpath, 'wb') as qrfile:
       qrdl = urllib2.urlopen(url)
@@ -226,7 +249,7 @@ for cnt, g in enumerate(sorted(data, key = lambda _:_.name.strip().split(" ")[-1
 # close last page
 save_svg(svg, n)
 
-print "Check longest name'", longest_name, "'on page", longest_page, "for clipping."
+print "Check longest name '%s'" % longest_name, "'on page", longest_page, "for clipping."
 
 # this is for after everthing is done. it combines all PDFs into one using pdftk.
 # if you change the filepattern, you also have to change it in other spots
@@ -234,3 +257,4 @@ os.system("pdftk %s-*.pdf output %s.pdf" % (BASEFN, BASEFN))
 # this one is for convert, not tested
 #os.system("convert %s-*.pdf %s.pdf" % (BASEFN, BASEFN))
 print "Collected all PDFs into %s.pdf" % BASEFN
+
