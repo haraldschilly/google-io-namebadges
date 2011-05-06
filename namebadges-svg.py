@@ -258,7 +258,10 @@ longest_page = 0
 # iterate over each named tuple Guest generated for each first 2 elements in csv list of lists
 # if your CSV list doesn't start with name and email, you have to pick other columns,
 # e.g. _make([x[1], x[5])
-for cnt, g in enumerate(map(lambda x : Guest._make(x[:2]), content)):
+data = map(lambda x : Guest._make(x[:2]), content)
+
+# iterate over sorted list by surname. names like "  name   surname  " are fine.
+for cnt, g in enumerate(sorted(data, key = lambda _:_.name.strip().split(" ")[-1])):
 
   # use QRtmpl template from above to construct url
   url = QRtmpl.format(name=urllib2.quote(g.name), email=urllib2.quote(g.email))
