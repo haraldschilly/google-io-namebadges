@@ -27,7 +27,6 @@
 # you can either print the SVG directly (e.g. inkscape) or use inkscape to render a beautiful PDF (default).
 
 import sys
-### SETTINGS
 
 # input filename (csv)
 # example content:
@@ -35,25 +34,46 @@ import sys
 # "firstname1 name1","email@email.com",...
 # ...
 if len(sys.argv) != 2:
-  print "USAGE: %s filename.csv" % sys.argv[0]
+  print "USAGE: %s filename.csv [settings.ini]" % sys.argv[0]
   print 
   print "example content (CSV file, with one header line):"
   print "name,email,... [remaining fields don't matter]"
   print '"firstname1 name1","email@email.com",...'
+  print
+  print "you can optionally specify a settings file as second argument"
   sys.exit(1)
 CSVFN = sys.argv[1]
 # output filename common prefix
 BASEFN = CSVFN.replace(".csv", "")
 
-IOLOGO = "io-extended-logo.png" # TODO check for updates in 2012 and later
-COLORSTRIP = "google-io-colorstrip.png"
+# settings file as optional second argument
+SETTINGSFN = "settings.ini"
+if len(sys.argv) >= 3:
+  SETTINGSFN = sys.argv[2]
+ 
+### READING SETTINGS
+from ConfigParser import ConfigParser
+C = ConfigParser()
+C.read(SETTINGSFN)
 
-# logo of the host
-HOSTLOGO = "sektor5-logo.png"
+IOLOGO = C.get("pix", "IOLOGO")
+COLORSTRIP = C.get("pix", "COLORSTRIP")
+HOSTLOGO = C.get("pix", "HOSTLOGO")
+FOOTER = C.get("badge", "FOOTER")
+TEASER = C.get("badge", "TEASER")
+QRtmpl = C.get("badge", "QRtmpl")
+pdims = [ C.getfloat("page", _) for _ in ["pdimheight", "pdimwidth"] ]
+pmargin = [ C.getfloat("page", "pmargin%s"%_) for _ in ["top", "right", "bottom", "left" ]]
+rows = C.getint("page", "rows")
+cols = C.getint("page", "cols")
+bspace = C.getfloat("page", "bspaceheight"), C.getfloat("page", "bspacewidth")
+unit = C.get("page", "unit")
 
-# text at the bottom
-FOOTER = "sektor5 vienna 10. &amp; 11. may 2011"
+# calculating badge size info (height and width)
+bdims = float(pdims[0] - pmargin[0] - pmargin[2] - bspace[0] * (rows-1)) / rows,\
+        float(pdims[1] - pmargin[3] - pmargin[1] - bspace[1] * (cols-1)) / cols 
 
+# utility functions
 def svg2pdf(n):
     """convert the n-th svg file to pdf"""
     # if you change the filepattern, you also have to change it in other spots
@@ -70,37 +90,8 @@ def post_hook():
   #os.system("convert %s-*.pdf %s.pdf" % (BASEFN, BASEFN))
   print "collected all PDFs into %s.pdf" % BASEFN
 
-# template for QR code, the data is a format scanner apps on smartphones understand as contact information
-# chld=<ECC type (L (only 7% but not so fine structures), M, Q, H)> and after the | is the margin
-QRtmpl = r'http://chart.apis.google.com/chart?cht=qr&chs=200x200&chld=M|0&chl=MECARD%3AN%3A{name}%3BEMAIL%3A{email}%3B%3B'
 
-# in front of each name
-PREFIX = "Hi, I'm"
-
-# something to fill in ... 
-TEASER = "I wish Google could ..."
-
-# page dimensions (mm)
-pdims = 297, 210  # A4 has height 297 mm x width 210 mm 
-
-# margins on whole page [ top, right, bottom, left in mm]
-pmargin = 10, 10, 10, 10
-
-# how many on each page
-rows = 5
-cols = 2
-
-# badge spacing in between [ height direction, width direction ]
-bspace = 0, 0
-
-# badge info (height and width)
-bdims = float(pdims[0] - pmargin[0] - pmargin[2] - bspace[0] * (rows-1)) / rows,\
-        float(pdims[1] - pmargin[3] - pmargin[1] - bspace[1] * (cols-1)) / cols 
-
-#print bdims
-unit = "mm" # used in SVG after each dimension value. 
-
-# SVG basics (motivated people might wanna create a class :-)
+# SVG basics 
 from datetime import datetime
 date = datetime.strftime(datetime.utcnow(), "%Y-%m-%d %H:%M:%S UTC")
 
@@ -137,7 +128,7 @@ SVG_intro = Template('''\
  </rdf:RDF>
 </metadata>
 <g id="papersheet">
-''').substitute(date=date, width=("%s"+unit) % pdims[1], height=("%s"+unit) % pdims[0])
+''').substitute(date=date, width="%s%s" % (pdims[1], unit), height="%s%s"% (pdims[0],unit))
 
 SVG_outro = r'''
 </g>
@@ -212,6 +203,36 @@ def svg_text_impl(tokens, font="Bitstream Vera Sans Mono", col="#000000", varian
      '''.format(size="%f%s"%(size,unit), style=style, variant=variant, weight=weight, col=col, font=font)  + t + "</text>"
 
 
+def draw_badge(cnt, g):
+  # calc position on page, (x,y)
+  offsetcnt = cnt % cols, (cnt % (rows*cols)) / cols 
+  offset = pmargin[3] + offsetcnt[0] * (bdims[1] + bspace[1]),\
+           pmargin[0] + offsetcnt[1] * (bdims[0] + bspace[0])
+
+  svg = unicode()
+  # for testing the actual borders
+  #svg += svg_rect(offset[0], offset[1], bdims[1], bdims[0], "#ccc")
+  # name
+  svg += svg_text(offset[0] + 5, offset[1] + 9, g.name.lower().decode("utf8"), size=6, weight="bold")
+  #svg += svg_text(offset[0] + 4, offset[1] + 16, g.email.lower(),               size=4, col="#333")
+  # Teaser
+  svg += svg_text(offset[0] + 6, offset[1] + 13, TEASER, size=2, col="#bbb")
+  # Logo Host (e.g. 242x242 original)
+  hwidth = 15
+  hheight = (hwidth/242.0) * 242.0
+  svg += svg_img(offset[0] + 51,  offset[1] + bdims[0] - 16, hwidth, hheight, HOSTLOGO)
+  # Logo IO
+  lwidth = 40
+  lheight = (lwidth/278.0)*79
+  svg += svg_img(offset[0] + 6, offset[1] + bdims[0] - lheight - 2, lwidth, lheight, IOLOGO)
+  # colorstrip
+  svg += svg_img(offset[0], offset[1] + 3, 3, bdims[0] - 4, COLORSTRIP)
+  # QR
+  qrdim = 22
+  svg += svg_img(offset[0] + bdims[1] - qrdim - 2, offset[1] + bdims[0] - qrdim - 1, qrdim, qrdim, qrpath)
+  # Footer
+  svg += svg_text(offset[0] + 5, offset[1] + bdims[0] - qrdim + 2, FOOTER, col="#333", variant="italic", size=3.20)
+  return svg
 
 
 # primitive datacontainer
@@ -273,33 +294,8 @@ for cnt, g in enumerate(map(lambda x : Guest._make(x[:2]), content)):
     svg = unicode()
     svg += SVG_intro
 
-  # calc position on page, (x,y)
-  offsetcnt = cnt % cols, (cnt % (rows*cols)) / cols 
-  offset = pmargin[3] + offsetcnt[0] * (bdims[1] + bspace[1]),\
-           pmargin[0] + offsetcnt[1] * (bdims[0] + bspace[0])
+  svg += draw_badge(cnt, g)
 
-  # for testing the actual borders
-  #svg += svg_rect(offset[0], offset[1], bdims[1], bdims[0], "#ccc")
-  # name
-  svg += svg_text(offset[0] + 5, offset[1] + 9, g.name.lower().decode("utf8"), size=6, weight="bold")
-  #svg += svg_text(offset[0] + 4, offset[1] + 16, g.email.lower(),               size=4, col="#333")
-  # Teaser
-  svg += svg_text(offset[0] + 6, offset[1] + 13, TEASER, size=2, col="#bbb")
-  # Logo Host (e.g. 242x242 original)
-  hwidth = 15
-  hheight = (hwidth/242.0) * 242.0
-  svg += svg_img(offset[0] + 51,  offset[1] + bdims[0] - 16, hwidth, hheight, HOSTLOGO)
-  # Logo IO
-  lwidth = 40
-  lheight = (lwidth/278.0)*79
-  svg += svg_img(offset[0] + 6, offset[1] + bdims[0] - lheight - 2, lwidth, lheight, IOLOGO)
-  # colorstrip
-  svg += svg_img(offset[0], offset[1] + 3, 3, bdims[0] - 4, COLORSTRIP)
-  # QR
-  qrdim = 22
-  svg += svg_img(offset[0] + bdims[1] - qrdim - 2, offset[1] + bdims[0] - qrdim - 1, qrdim, qrdim, qrpath)
-  # Footer
-  svg += svg_text(offset[0] + 5, offset[1] + bdims[0] - qrdim + 2, FOOTER, col="#333", variant="italic", size=3.20)
 
 # close last page
 svg += SVG_outro
