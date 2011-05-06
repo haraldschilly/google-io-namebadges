@@ -117,7 +117,7 @@ from svg import SVG
 
 
 
-def draw_badge(svg, cnt, g):
+def draw_badge(svg, cnt, g, qrpath):
   # calc position on page, (x,y)
   offsetcnt = cnt % cols, (cnt % (rows*cols)) / cols 
   offset = pmargin[3] + offsetcnt[0] * (bdims[1] + bspace[1]),\
@@ -150,12 +150,12 @@ def draw_cutmarks(svg):
   # top and bottom
   for c in range(cols + 1):
     x = pmargin[3] + c * (bdims[1] + bspace[1]) - bspace[1] / 2.0 - 1
-    svg.line((x, 0),                                     (x, pmargin[0] - bspace[0] - 1))
+    svg.line((x, 0),                                     (x, pmargin[0] - bspace[0]))
     svg.line((x, pdims[0] - pmargin[2] + bspace[1] + 2), (x, pdims[0]))
   for r in range(rows + 1):
     y = pmargin[0] + r * (bdims[0] + bspace[0]) - bspace[0] / 2.0 + 1
     svg.line((0, y),                                     (pmargin[3] - bspace[1] - 2, y))
-    svg.line((pdims[1] - pmargin[1] + bspace[0] + 1, y), (pdims[1], y))
+    svg.line((pdims[1] - pmargin[1] + bspace[0] , y), (pdims[1], y))
 
 def draw_info(svg, n):
   from datetime import datetime
@@ -179,12 +179,12 @@ content.next() # skip header
 
 # initialized and used in the for loop
 svg = None # svg file content
-n   = 0          # n-th page
+n   = 0    # n-th page
 
 longest_name = ""
 longest_page = 0
 
-# iterate over each named tuple Guest generated for each first 2 elements in csv list of lists
+# iterate over each named tuple Guest generated for selected elements in CSV's line list
 data = map(lambda _ : Guest._make([_[name_idx], _[email_idx]]), content)
 
 # iterate over sorted list by surname. names like "  name   surname  " are fine.
@@ -222,7 +222,7 @@ for cnt, g in enumerate(sorted(data, key = lambda _:_.name.strip().split(" ")[-1
        n += 1
     svg = SVG(pdims, unit)
 
-  draw_badge(svg, cnt, g)
+  draw_badge(svg, cnt, g, qrpath)
 
 
 # close last page
