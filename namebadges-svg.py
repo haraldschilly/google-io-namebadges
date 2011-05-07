@@ -209,7 +209,7 @@ longest_page = 0
 data = map(lambda _ : Guest._make([_[name_idx], _[email_idx]]), content)
 
 # iterate over sorted list by surname. names like "  name   surname  " are fine.
-for cnt, g in enumerate(sorted(data, key = lambda _:_.name.strip().split(" ")[-1])):
+for cnt, g in enumerate(sorted(data, key = lambda _:_.name.lower().strip().split(" ")[-1])):
 
   # use QRtmpl template from above to construct url
   url = QRtmpl.format(name=urllib2.quote(g.name), email=urllib2.quote(g.email))
