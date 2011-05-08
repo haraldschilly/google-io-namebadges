@@ -156,7 +156,7 @@ def save_svg(svg, n):
   saves the n-th svg file from the string svg
   """
   # if you change SVGFN, you also have to change the delete pattern above
-  SVGFN = "%s-%d.svg" % (BASEFN, n)
+  SVGFN = "%s-%02d.svg" % (BASEFN, n)
   draw_cutmarks(svg)
   draw_info(svg, n)
   svg = svg.finalize()
@@ -165,7 +165,7 @@ def save_svg(svg, n):
     print "output svg written to", os.path.abspath(SVGFN)
   # now convert the n-th svg file to pdf using inkscape
   # if you change the filepattern, you also have to change it in other spots
-  os.system("inkscape --export-pdf=%s-%s.pdf %s-%s.svg" % (BASEFN, n, BASEFN, n))
+  os.system("inkscape --export-pdf=%s-%02d.pdf %s-%02d.svg" % (BASEFN, n, BASEFN, n))
   print "converted svg %d to pdf" % n
 
 
@@ -207,6 +207,11 @@ longest_page = 0
 
 # iterate over each named tuple Guest generated for selected elements in CSV's line list
 data = map(lambda _ : Guest._make([_[name_idx], _[email_idx]]), content)
+
+# fill remainder of last page with empty tags
+nb_lines = sum(1 for _ in open(CSVFN)) - 1
+for i in range((rows * cols ) - nb_lines % (rows * cols)):
+  data.append(Guest._make(["", ""]))
 
 # iterate over sorted list by surname. names like "  name   surname  " are fine.
 for cnt, g in enumerate(sorted(data, key = lambda _:_.name.lower().strip().split(" ")[-1])):
