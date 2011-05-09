@@ -115,6 +115,9 @@ def draw_badge(svg, cnt, g, qrpath):
   #svg += svg_text(offset[0] + 4, offset[1] + 16, g.email.lower(),               size=4, col="#333")
   # Teaser
   svg.text(offset[0] + 6, offset[1] + 14, TEASER, size=2, col="#b0b0b0")
+  # "name:" on top of name area, if there is no name
+  if len(g.name) == 0:
+    svg.text(offset[0] + 6, offset[1] + 5, "name:", size=2, col="#b0b0b0")
   # Logo Host (e.g. 242x242 original)
   hwidth = 15
   hheight = (hwidth/242.0) * 242.0
@@ -209,9 +212,10 @@ longest_page = 0
 data = map(lambda _ : Guest._make([_[name_idx], _[email_idx]]), content)
 
 # fill remainder of last page with empty tags
-nb_lines = sum(1 for _ in open(CSVFN)) - 1
-for i in range((rows * cols ) - nb_lines % (rows * cols)):
-  data.append(Guest._make(["", ""]))
+if CSVFN != None:
+  nb_lines = sum(1 for _ in open(CSVFN)) - 1
+  for i in range((rows * cols ) - nb_lines % (rows * cols)):
+    data.append(Guest._make(["", ""]))
 
 # iterate over sorted list by surname. names like "  name   surname  " are fine.
 for cnt, g in enumerate(sorted(data, key = lambda _:_.name.lower().strip().split(" ")[-1])):
