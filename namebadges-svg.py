@@ -139,12 +139,12 @@ def draw_cutmarks(svg):
   # top and bottom
   for c in range(cols + 1):
     x = pmargin[3] + c * (bdims[1] + bspace[1]) - bspace[1] / 2.0 - 1
-    svg.line((x, 0),                                     (x, pmargin[0] - bspace[0]))
-    svg.line((x, pdims[0] - pmargin[2] + bspace[1] + 2), (x, pdims[0]))
+    svg.line((x, 5),                                     (x, pmargin[0] - bspace[0]))
+    svg.line((x, pdims[0] - pmargin[2] + bspace[1] + 2), (x, pdims[0] - 5))
   for r in range(rows + 1):
     y = pmargin[0] + r * (bdims[0] + bspace[0]) - bspace[0] / 2.0 + 1
-    svg.line((0, y),                                     (pmargin[3] - bspace[1] - 2, y))
-    svg.line((pdims[1] - pmargin[1] + bspace[0] , y), (pdims[1], y))
+    svg.line((5, y),                                  (pmargin[3] - bspace[1] - 2, y))
+    svg.line((pdims[1] - pmargin[1] + bspace[0] , y), (pdims[1]-5, y))
 
 def draw_info(svg, n):
   from datetime import datetime

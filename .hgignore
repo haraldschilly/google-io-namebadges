@@ -7,3 +7,4 @@ syntax: regexp
 ^.*.svg$
 ^.*.pdf$
 ^.*.pyc$
+^.*.lzma$
